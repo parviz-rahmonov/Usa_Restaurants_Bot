@@ -17,10 +17,7 @@ from constants import (
 )
 from keyboards.admin_kb import get_admin_main_keyboard
 from aiogram.filters import BaseFilter
-
-
 from aiogram.types import TelegramObject
-from aiogram.filters import BaseFilter
 
 
 class _AdminFlagFilter(BaseFilter):
@@ -30,6 +27,7 @@ class _AdminFlagFilter(BaseFilter):
         is_admin: bool = False
     ) -> bool:
         return is_admin
+
 
 logger = logging.getLogger(__name__)
 router = Router(name=__name__)
