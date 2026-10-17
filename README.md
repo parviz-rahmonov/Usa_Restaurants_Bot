@@ -1,191 +1,57 @@
-# 🍽 USA Restaurants Bot
+# USA Restaurants Bot | Бот-каталог ресторанов США
 
-A Telegram bot for exploring restaurants across US states, built with Python 3.12 and aiogram 3.x.
+**EN:** Telegram bot for browsing restaurants by US state, searching listings and filtering delivery options. Includes an administrator interface to add, edit and remove restaurants.
 
----
+**RU:** Telegram-бот для просмотра ресторанов по штатам США, поиска и фильтрации доставки. Администратор может добавлять, редактировать и удалять рестораны.
 
-## 📱 Features
+## Features / Возможности
 
-**Public**
-- `/start` — welcome screen with US state selection
-- Browse restaurants by state via Inline buttons
-- View restaurant details: name, phone, address, delivery status
-- Links to Telegram channel or Google Maps
-- Filter by 🚚 Delivery Only
+- Browse by state / Просмотр по штатам
+- Restaurant details and maps / Карточки ресторанов и карты
+- Delivery filter and search / Фильтр доставки и поиск
+- Admin CRUD with FSM / Управление каталогом через FSM
+- JSON persistence with atomic writes / Сохранение JSON с атомарной записью
+- Admin-only callbacks and messages / Проверка прав для административных действий
 
-**Admin** (`/admin`)
-- ➕ Add Restaurant — step-by-step FSM form
-- ✏️ Edit Restaurant — update any field
-- 🗑 Delete Restaurant — with confirmation
-- 📋 View Restaurants — full list by state
-- Access restricted by Telegram ID
+## Setup / Установка
 
----
-
-## 🛠 Tech Stack
-
-| Tool | Version |
-|------|---------|
-| Python | 3.12 |
-| aiogram | 3.x |
-| python-dotenv | 1.0+ |
-| FSM Storage | Memory (MemoryStorage) |
-
----
-
-## 📁 Project Structure
-
-usa_restaurants_bot/
-
-├── bot.py                  # Entry point
-
-├── config.py               # Settings loader
-
-├── constants.py            # All strings and callback data
-
-│
-
-├── data/
-
-│   └── restaurants.py      # Restaurant data store
-
-│
-
-├── filters/
-
-│   ├── admin.py            # IsAdminFilter
-
-│   └── chat_type.py        # ChatTypeFilter
-
-│
-
-├── handlers/
-
-│   ├── start.py            # /start command
-
-│   ├── states_list.py      # State selection
-
-│   ├── restaurants.py      # Delivery filter
-
-│   └── admin/
-
-│       ├── menu.py         # /admin command
-
-│       ├── add.py          # Add FSM
-
-│       ├── edit.py         # Edit FSM
-
-│       ├── delete.py       # Delete FSM
-
-│       └── view.py         # View list
-
-│
-
-├── keyboards/
-
-│   ├── builder.py          # Base keyboard builder
-
-│   ├── states_kb.py        # States keyboard
-
-│   ├── restaurants_kb.py   # Restaurants keyboard
-
-│   └── admin_kb.py         # Admin keyboards
-
-│
-
-├── states/
-
-│   └── admin_states.py     # FSM state groups
-
-│
-
-└── utils/
-
-└── formatters.py       # Text formatters
-
----
-
-## 🚀 Getting Started
-
-### 1. Clone the repository
+Requires Python 3.12+ / Требуется Python 3.12+.
 
 ```bash
-git clone https://github.com/your-username/usa-restaurants-bot.git
-cd usa-restaurants-bot
-```
-
-### 2. Create a virtual environment
-
-```bash
+git clone https://github.com/parviz-rahmonov/Usa_restaurants_Bot.git
+cd Usa_restaurants_Bot
 python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
+# Linux/macOS: source .venv/bin/activate
+# Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment
+Copy `.env.example` to `.env` and set `BOT_TOKEN` and comma-separated `ADMIN_IDS`. Never commit `.env`.
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```env
-BOT_TOKEN=your_bot_token_here
-ADMIN_IDS=123456789,987654321
-```
-
-> Get a token from [@BotFather](https://t.me/BotFather).  
-> Get your Telegram ID from [@userinfobot](https://t.me/userinfobot).
-
-### 5. Run the bot
+Скопируйте `.env.example` в `.env` и заполните `BOT_TOKEN` и `ADMIN_IDS` (ID через запятую). Не публикуйте `.env`.
 
 ```bash
 python bot.py
 ```
 
----
+## Data and limitations / Данные и ограничения
 
-## ⚙️ Environment Variables
+The initial catalog is bundled in `data/restaurants.py`; admin changes are saved to `data/db.json` (excluded from Git). **Back up this file**. FSM uses in-memory storage, so unfinished admin forms are lost on restart. This is a portfolio/demo project, not a production-grade multi-instance database service. Restaurant details are example data and may be outdated; verify before relying on them.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `BOT_TOKEN` | ✅ | Telegram bot token from @BotFather |
-| `ADMIN_IDS` | ✅ | Comma-separated admin Telegram IDs |
+Начальный каталог находится в `data/restaurants.py`; изменения сохраняются в `data/db.json` (исключён из Git). **Создавайте резервные копии**. FSM хранится в памяти, поэтому незавершённые формы теряются при перезапуске. Это демонстрационный проект, не готовая многосерверная система. Сведения о ресторанах могут устареть.
 
----
+## Security / Безопасность
 
-## 🔐 Admin Access
+Administrative message and callback handlers require an allowlisted Telegram user ID. Do not publish tokens or real customer data.
 
-Only users listed in `ADMIN_IDS` can use `/admin`.  
-All others receive: `⛔ Access denied.`
+Административные обработчики сообщений и callback защищены списком разрешённых Telegram ID. Не публикуйте токены и персональные данные клиентов.
 
----
+## Tests / Тесты
 
-## 📦 Data Storage
+```bash
+python -m unittest discover -s tests -v
+```
 
-Restaurants are stored in a Python dictionary in `data/restaurants.py`.  
-All changes made via the admin panel persist for the lifetime of the process.
+Tests cover JSON persistence and source-level checks. Telegram end-to-end testing requires a configured bot and has not been performed here.
 
-> To add persistent storage, replace `data/restaurants.py` with a database repository layer.
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m "feat: add my feature"`
-4. Push and open a Pull Request
-
----
-
-## 📄 License
-
-MIT License. See [LICENSE](LICENSE) for details.
-
+Тесты проверяют сохранение JSON и базовые свойства исходников. Полное тестирование через Telegram здесь не проводилось.

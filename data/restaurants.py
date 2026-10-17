@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import TypedDict
 
@@ -257,19 +259,28 @@ def _load() -> dict[str, list[Restaurant]]:
                 logger.info("Loaded %d states from %s", len(data), DB_PATH)
                 return data
         except (json.JSONDecodeError, OSError) as exc:
-            logger.warning("Failed to load db.json (%s), using defaults.", exc)
+            raise RuntimeError(f"Cannot load {DB_PATH}: {exc}. Restore a backup or repair JSON.") from exc
     logger.info("db.json not found — using built-in defaults.")
     return {k: list(v) for k, v in _DEFAULT_DATA.items()}
 
 
 def save() -> None:
-    """Persist current RESTAURANTS to db.json."""
+    """Atomically persist the restaurant catalog; propagate write failures."""
+    temporary_name = None
     try:
-        with DB_PATH.open("w", encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=DB_PATH.parent,
+            prefix=".restaurants-", suffix=".tmp", delete=False
+        ) as f:
+            temporary_name = f.name
             json.dump(RESTAURANTS, f, ensure_ascii=False, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary_name, DB_PATH)
         logger.debug("Saved %d states to %s", len(RESTAURANTS), DB_PATH)
-    except OSError as exc:
-        logger.error("Failed to save db.json: %s", exc)
+    finally:
+        if temporary_name and os.path.exists(temporary_name):
+            os.unlink(temporary_name)
 
 
 # Single mutable source of truth

@@ -16,6 +16,20 @@ from constants import (
     MSG_ADMIN_WELCOME,
 )
 from keyboards.admin_kb import get_admin_main_keyboard
+from aiogram.filters import BaseFilter
+
+
+from aiogram.types import TelegramObject
+from aiogram.filters import BaseFilter
+
+
+class _AdminFlagFilter(BaseFilter):
+    async def __call__(
+        self,
+        event: TelegramObject,
+        is_admin: bool = False
+    ) -> bool:
+        return is_admin
 
 logger = logging.getLogger(__name__)
 router = Router(name=__name__)
@@ -37,7 +51,7 @@ async def cmd_admin(message: Message, is_admin: bool) -> None:
     await message.answer(text=MSG_ADMIN_WELCOME, reply_markup=get_admin_main_keyboard())
 
 
-@router.callback_query(F.data == CB_ADMIN_BACK_MENU)
+@router.callback_query(F.data == CB_ADMIN_BACK_MENU, _AdminFlagFilter())
 async def on_back_to_admin_menu(callback: CallbackQuery, state: FSMContext) -> None:
     """Return to admin main menu from any sub-screen, clearing FSM state."""
     await state.clear()
@@ -48,7 +62,7 @@ async def on_back_to_admin_menu(callback: CallbackQuery, state: FSMContext) -> N
     await callback.answer()
 
 
-@router.callback_query(F.data == CB_ADMIN_EXIT)
+@router.callback_query(F.data == CB_ADMIN_EXIT, _AdminFlagFilter())
 async def on_admin_exit(callback: CallbackQuery, state: FSMContext) -> None:
     """Close the admin panel."""
     await state.clear()

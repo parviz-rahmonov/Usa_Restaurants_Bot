@@ -6,13 +6,14 @@ import asyncio
 import logging
 import sys
 
-from aiogram import BaseMiddleware, Bot, Dispatcher
+from aiogram import BaseMiddleware, Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import TelegramObject
 
 from config import Settings, get_settings
 from filters.chat_type import ChatTypeFilter
+from filters.admin import IsAdminFilter
 from handlers import restaurants, start, states_list, search  # ← search added
 from handlers.admin import menu as admin_menu
 from handlers.admin import add as admin_add
@@ -34,7 +35,7 @@ class AdminMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict) -> None:
         user = data.get("event_from_user")
         data["is_admin"] = user is not None and user.id in self._admin_ids
-        await handler(event, data)
+        return await handler(event, data)
 
 
 def _setup_logging() -> None:
@@ -58,12 +59,20 @@ def _build_dispatcher(settings: Settings) -> Dispatcher:
     dp.include_router(states_list.router)
     dp.include_router(restaurants.router)
 
-    # Admin routers
-    dp.include_router(admin_add.router)
-    dp.include_router(admin_edit.router)
-    dp.include_router(admin_delete.router)
-    dp.include_router(admin_view.router)
+    # A parent router protects every administrative message and callback,
+    # including FSM continuation handlers and menu navigation.
+    admin_router = Router(name="protected_admin")
+    admin_router.message.filter(IsAdminFilter(settings.admin_ids))
+    admin_router.callback_query.filter(IsAdminFilter(settings.admin_ids))
+    admin_router.include_router(admin_add.router)
+    admin_router.include_router(admin_edit.router)
+    admin_router.include_router(admin_delete.router)
+    admin_router.include_router(admin_view.router)
+
+    # The /admin command remains public so unauthorized users get a clear denial.
+    # Menu callbacks are included in the protected router separately below.
     dp.include_router(admin_menu.router)
+    dp.include_router(admin_router)
 
     return dp
 
